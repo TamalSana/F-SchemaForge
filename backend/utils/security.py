@@ -3,7 +3,6 @@ from jose import jwt
 from datetime import datetime, timedelta
 from config import Config
 
-# Use pbkdf2_sha256 (no extra dependencies, works on Windows)
 pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
 def hash_password(password: str) -> str:

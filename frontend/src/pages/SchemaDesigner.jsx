@@ -80,19 +80,20 @@ export default function SchemaDesigner() {
   };
 
   const addEntity = () => {
-    if (!newEntityName.trim()) {
+    const trimmedName = newEntityName.trim();
+    if (!trimmedName) {
       toast.error('Entity name required');
       return;
     }
-    if (entities.find(e => e.name === newEntityName)) {
+    if (entities.find(e => e.name === trimmedName)) {
       toast.error('Duplicate entity name');
       return;
     }
-    const newEntity = { name: newEntityName, attributes: [] };
+    const newEntity = { name: trimmedName, attributes: [] };
     setEntities([...entities, newEntity]);
     setCurrentEntity(newEntity);
     setNewEntityName('');
-    toast.success(`Entity "${newEntityName}" added`);
+    toast.success(`Entity "${trimmedName}" added`);
   };
 
   // Updated deleteEntity with backend API call
@@ -116,7 +117,8 @@ export default function SchemaDesigner() {
       toast.error('Select an entity first');
       return;
     }
-    if (!newAttr.name.trim()) {
+    const trimmedName = newAttr.name.trim();
+    if (!trimmedName) {
       toast.error('Attribute name required');
       return;
     }
@@ -124,7 +126,7 @@ export default function SchemaDesigner() {
       toast.error('Data type required');
       return;
     }
-    if (currentEntity.attributes.find(a => a.name === newAttr.name)) {
+    if (currentEntity.attributes.find(a => a.name === trimmedName)) {
       toast.error('Duplicate attribute name');
       return;
     }

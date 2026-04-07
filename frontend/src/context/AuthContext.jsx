@@ -11,8 +11,15 @@ export const AuthProvider = ({ children }) => {
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
     if (token && userData) {
-      setUser(JSON.parse(userData));
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      try {
+        const parsedUser = JSON.parse(userData);
+        setUser(parsedUser);
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      } catch (e) {
+        console.error('Failed to parse user data', e);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
     }
     setLoading(false);
   }, []);

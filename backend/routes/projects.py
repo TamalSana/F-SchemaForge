@@ -50,12 +50,18 @@ async def create_project(req: CreateProjectRequest, request: Request):
 @router.get("/my")
 async def get_my_projects(request: Request):
     user = get_current_user(request)
-    rows = execute_query(
-        """SELECT p.id, p.name, p.secret_key, pm.role FROM projects p
-           JOIN project_members pm ON p.id = pm.project_id
-           WHERE pm.user_id = %s AND pm.status = 'approved'""",
-        (user["id"],), fetch_all=True
-    )
+    rows = execute_query("""
+        SELECT p.id, p.name, p.secret_key, p.database_name, pm.role 
+        FROM projects p
+        JOIN project_members pm ON p.id = pm.project_id
+        WHERE pm.user_id = %s AND pm.status = 'approved'
+    """, (user["id"],), fetch_all=True)
+    
+    # Hide secret key for non-admin members
+    for row in rows:
+        if row["role"] != "admin" and not user.get("is_super_admin") and not user.get("is_admin"):
+            row["secret_key"] = "********"
+    
     return rows
 
 @router.post("/join")

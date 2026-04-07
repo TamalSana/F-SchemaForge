@@ -4,12 +4,25 @@ import { useAuth } from '../context/AuthContext';
 
 export default function Layout() {
   const { user } = useAuth();
-  if (!user) return <Outlet />;
+  
+  // If no user, show just the outlet (login/register pages)
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-100">
+        <main className="p-4">
+          <Outlet />
+        </main>
+      </div>
+    );
+  }
+  
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100">
       <Sidebar />
-      <main className="flex-1 md:ml-64 p-4 md:p-6 overflow-auto">
-        <Outlet />
+      <main className="md:ml-72 p-4 md:p-6 transition-all duration-300">
+        <div className="max-w-7xl mx-auto">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

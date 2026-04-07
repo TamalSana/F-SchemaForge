@@ -14,6 +14,9 @@ import DataManagement from './pages/DataManagement';
 import AdminPanel from './pages/AdminPanel';
 import AdminUserManagement from './pages/AdminUserManagement';
 import SQLHistory from './pages/SQLHistory';
+import ProjectPermissions from './pages/ProjectPermissions';
+import ChangeCredentials from './pages/ChangeCredentials';
+
 
 function App() {
   return (
@@ -34,6 +37,8 @@ function App() {
             <Route path="/project/:id/sql-preview" element={<ProtectedRoute><SQLPreview /></ProtectedRoute>} />
             <Route path="/project/:id/data" element={<ProtectedRoute><DataManagement /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminPanel /></ProtectedRoute>} />
+            <Route path="/project/:id/permissions" element={<ProtectedRoute><ProjectPermissions /></ProtectedRoute>} />
+            <Route path="/change-credentials" element={<ProtectedRoute><ChangeCredentials /></ProtectedRoute>} />
           </Route>
         </Routes>
       </BrowserRouter>
