@@ -97,3 +97,29 @@ async def approve_user(req: ApproveUserRequest, request: Request):
         (req.role, req.project_id, req.user_id), commit=True
     )
     return {"message": "User approved"}
+@router.delete("/{project_id}")
+async def delete_project(project_id: int, request: Request):
+    user = get_current_user(request)
+    # Check if user is admin of this project or super admin
+    if not (user.get("is_super_admin") or is_project_admin(project_id, user["id"])):
+        raise HTTPException(status_code=403, detail="Not authorized to delete this project")
+    
+    # First, drop all project-specific tables (they are named `project_{id}_*`)
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SHOW TABLES LIKE 'project_%'")
+        tables = cursor.fetchall()
+        for table in tables:
+            table_name = table[0]
+            if table_name.startswith(f"project_{project_id}_"):
+                cursor.execute(f"DROP TABLE IF EXISTS {table_name}")
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print(f"Error dropping tables: {e}")
+    
+    # Delete project (cascade will remove members, schema_definitions)
+    execute_query("DELETE FROM projects WHERE id=%s", (project_id,), commit=True)
+    return {"message": "Project and all associated data deleted"}
