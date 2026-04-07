@@ -21,7 +21,10 @@ class ApproveUserRequest(BaseModel):
 @router.post("/create")
 async def create_project(req: CreateProjectRequest, request: Request):
     user = get_current_user(request)
-    secret_key = secrets.token_urlsafe(16)
+    secret_key = secrets.token_hex(16)
+    perm = execute_query("SELECT can_create_project FROM user_permissions WHERE user_id=%s", (user["id"],), fetch_one=True)
+    if not perm or not perm["can_create_project"]:
+        raise HTTPException(status_code=403, detail="You do not have permission to create projects")
     
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
@@ -97,6 +100,7 @@ async def approve_user(req: ApproveUserRequest, request: Request):
         (req.role, req.project_id, req.user_id), commit=True
     )
     return {"message": "User approved"}
+
 @router.delete("/{project_id}")
 async def delete_project(project_id: int, request: Request):
     user = get_current_user(request)
@@ -123,3 +127,11 @@ async def delete_project(project_id: int, request: Request):
     # Delete project (cascade will remove members, schema_definitions)
     execute_query("DELETE FROM projects WHERE id=%s", (project_id,), commit=True)
     return {"message": "Project and all associated data deleted"}
+
+@router.get("/all")
+async def get_all_projects(request: Request):
+    user = get_current_user(request)
+    if not user.get("is_super_admin"):
+        raise HTTPException(status_code=403, detail="Super admin only")
+    projects = execute_query("SELECT id, name FROM projects", fetch_all=True)
+    return projects

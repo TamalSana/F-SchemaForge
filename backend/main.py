@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database.connection import init_db_pool, execute_query
-from routes import auth, projects, schema_designer, data, admin
+from routes import auth, projects, schema_designer, data, admin,sql_history
 from utils.middleware import auth_middleware
 from utils.security import hash_password
 
@@ -36,6 +36,7 @@ app.include_router(projects.router)
 app.include_router(schema_designer.router)
 app.include_router(data.router)
 app.include_router(admin.router)
+app.include_router(sql_history.router)
 
 @app.get("/health")
 async def health():

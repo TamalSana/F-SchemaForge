@@ -12,6 +12,8 @@ import SchemaDesigner from './pages/SchemaDesigner';
 import SQLPreview from './pages/SQLPreview';
 import DataManagement from './pages/DataManagement';
 import AdminPanel from './pages/AdminPanel';
+import AdminUserManagement from './pages/AdminUserManagement';
+import SQLHistory from './pages/SQLHistory';
 
 function App() {
   return (
@@ -24,6 +26,8 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/project/:id/history" element={<ProtectedRoute><SQLHistory /></ProtectedRoute>} />
+            <Route path="/admin/users" element={<ProtectedRoute requireAdmin><AdminUserManagement /></ProtectedRoute>} />
             <Route path="/projects" element={<ProtectedRoute><ProjectList /></ProtectedRoute>} />
             <Route path="/project/:id" element={<ProtectedRoute><ProjectView /></ProtectedRoute>} />
             <Route path="/project/:id/schema" element={<ProtectedRoute><SchemaDesigner /></ProtectedRoute>} />

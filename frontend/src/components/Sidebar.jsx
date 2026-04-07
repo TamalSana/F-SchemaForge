@@ -26,6 +26,7 @@ export default function Sidebar() {
               <Link to={`/project/${projectId}/schema`} className="block py-2 px-3 rounded hover:bg-gray-700">Schema Designer</Link>
               <Link to={`/project/${projectId}/sql-preview`} className="block py-2 px-3 rounded hover:bg-gray-700">SQL Generator</Link>
               <Link to={`/project/${projectId}/data`} className="block py-2 px-3 rounded hover:bg-gray-700">Data Management</Link>
+              <Link to={`/project/${projectId}/history`} className="block py-2 px-3 rounded hover:bg-gray-700">SQL History</Link>
             </div>
           </>
         )}

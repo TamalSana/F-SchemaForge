@@ -75,3 +75,23 @@ CREATE TABLE sessions (
     expires_at TIMESTAMP NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+CREATE TABLE sql_history (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    project_id INT NOT NULL,
+    user_id INT NOT NULL,
+    sql_text TEXT NOT NULL,
+    status ENUM('success', 'failed', 'rolled_back') DEFAULT 'success',
+    executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE user_permissions (
+    user_id INT PRIMARY KEY,
+    can_create_project BOOLEAN DEFAULT TRUE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+INSERT INTO user_permissions (user_id, can_create_project)
+SELECT id, TRUE FROM users;

@@ -4,7 +4,7 @@ from schemas import SchemaDefinition
 from database.connection import execute_query
 from utils.middleware import get_current_user
 from services.permission_service import can_manage_schema, can_view_schema
-from services.schema_service import generate_sql_from_definition
+from services.schema_service import generate_sql_from_definition, get_schema_definition, create_table_from_entity
 
 router = APIRouter(prefix="/schema", tags=["schema"])
 
@@ -57,10 +57,8 @@ async def generate_sql(schema: SchemaDefinition, request: Request):
                 raise HTTPException(status_code=400, detail=f"Entity '{entity.name}' has an attribute with no name.")
             if not attr.data_type:
                 raise HTTPException(status_code=400, detail=f"Attribute '{attr.name}' in entity '{entity.name}' has no data type.")
-            # Auto‑assign default length for VARCHAR/CHAR
             if attr.data_type.upper() in ("VARCHAR", "CHAR") and not attr.max_length:
                 attr.max_length = 255
-            # Ensure max_length is integer if present
             if attr.max_length:
                 attr.max_length = int(attr.max_length)
     
@@ -68,7 +66,6 @@ async def generate_sql(schema: SchemaDefinition, request: Request):
         sql_statements = generate_sql_from_definition(schema)
         return {"sql": sql_statements}
     except Exception as e:
-        # Log the actual error to backend console
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=400, detail=str(e))
@@ -79,7 +76,7 @@ async def execute_schema(schema: SchemaDefinition, request: Request):
     if not can_manage_schema(schema.project_id, user["id"]):
         raise HTTPException(status_code=403, detail="Not authorized")
     
-    # Same auto‑fix as above
+    # Auto‑fix missing length
     for entity in schema.entities:
         for attr in entity.attributes:
             if attr.data_type.upper() in ("VARCHAR", "CHAR") and not attr.max_length:
@@ -95,13 +92,14 @@ async def execute_schema(schema: SchemaDefinition, request: Request):
             results.append({"sql": stmt, "status": "failed", "error": str(e)})
     return {"results": results}
 
+# Delete entity endpoint (used by frontend)
 @router.delete("/entity/{project_id}/{entity_name}")
 async def delete_entity(project_id: int, entity_name: str, request: Request):
     user = get_current_user(request)
     if not can_manage_schema(project_id, user["id"]):
         raise HTTPException(status_code=403, detail="Not authorized")
     
-    # Remove entity from saved schema definition
+    # Get current schema definition (as dict)
     schema_def = get_schema_definition(project_id)
     if not schema_def:
         raise HTTPException(status_code=404, detail="No schema found for this project")
@@ -126,3 +124,33 @@ async def delete_entity(project_id: int, entity_name: str, request: Request):
         print(f"Warning: Could not drop table {table_name}: {e}")
     
     return {"message": f"Entity '{entity_name}' and its table deleted"}
+
+@router.post("/execute")
+async def execute_schema(schema: SchemaDefinition, request: Request):
+    user = get_current_user(request)
+    if not can_manage_schema(schema.project_id, user["id"]):
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    for entity in schema.entities:
+        for attr in entity.attributes:
+            if attr.data_type.upper() in ("VARCHAR", "CHAR") and not attr.max_length:
+                attr.max_length = 255
+    
+    sql_statements = generate_sql_from_definition(schema)
+    results = []
+    for stmt in sql_statements:
+        try:
+            execute_query(stmt, commit=True)
+            results.append({"sql": stmt, "status": "success"})
+            # Record history
+            execute_query(
+                "INSERT INTO sql_history (project_id, user_id, sql_text, status) VALUES (%s, %s, %s, 'success')",
+                (schema.project_id, user["id"], stmt), commit=True
+            )
+        except Exception as e:
+            results.append({"sql": stmt, "status": "failed", "error": str(e)})
+            execute_query(
+                "INSERT INTO sql_history (project_id, user_id, sql_text, status) VALUES (%s, %s, %s, 'failed')",
+                (schema.project_id, user["id"], stmt), commit=True
+            )
+    return {"results": results}
