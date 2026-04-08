@@ -19,8 +19,8 @@ def require_admin_or_super(user):
 
 class ChangeCredentialsRequest(BaseModel):
     current_password: str
-    new_email: str = None
-    new_password: str = None
+    new_email: Optional[str] = None
+    new_password: Optional[str] = None
 
 
 # User Management Models
@@ -269,61 +269,34 @@ async def update_db_config(req: ConfigUpdate, request: Request):
 @router.post("/change-credentials")
 async def change_credentials(req: ChangeCredentialsRequest, request: Request):
     current_user = get_current_user(request)
-    
-    # Only super admin can change their own credentials
     if current_user.get("role") != "super_admin":
         raise HTTPException(status_code=403, detail="Only super admin can change credentials")
     
-    # Get current user data
     user = execute_query(
         "SELECT id, email, password_hash FROM users WHERE id=%s",
         (current_user["id"],), fetch_one=True
     )
-    
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    # Verify current password
     if not verify_password(req.current_password, user["password_hash"]):
         raise HTTPException(status_code=401, detail="Current password is incorrect")
     
-    messages = []
+    # Require at least one change
+    if not req.new_email and not req.new_password:
+        raise HTTPException(status_code=400, detail="At least one field (new email or new password) must be provided")
     
-    # Update email if provided
+    changes = []
     if req.new_email and req.new_email != user["email"]:
-        # Check if email is already taken
         existing = execute_query("SELECT id FROM users WHERE email=%s", (req.new_email,), fetch_one=True)
         if existing:
             raise HTTPException(status_code=400, detail="Email already in use")
-        
-        execute_query(
-            "UPDATE users SET email=%s WHERE id=%s", 
-            (req.new_email, user["id"]), commit=True
-        )
-        messages.append(f"Email changed from {user['email']} to {req.new_email}")
+        execute_query("UPDATE users SET email=%s WHERE id=%s", (req.new_email, user["id"]), commit=True)
+        changes.append(f"Email changed to {req.new_email}")
     
-    # Update password if provided
     if req.new_password:
+        if len(req.new_password) < 6:
+            raise HTTPException(status_code=400, detail="New password must be at least 6 characters")
         new_hashed = hash_password(req.new_password)
-        execute_query(
-            "UPDATE users SET password_hash=%s WHERE id=%s", 
-            (new_hashed, user["id"]), commit=True
-        )
-        messages.append("Password changed")
+        execute_query("UPDATE users SET password_hash=%s WHERE id=%s", (new_hashed, user["id"]), commit=True)
+        changes.append("Password changed")
     
-    if not messages:
-        raise HTTPException(status_code=400, detail="No changes provided")
-    
-    # Log the action
-    execute_query(
-        "INSERT INTO audit_logs (user_id, action, details) VALUES (%s, 'credentials_changed', %s)",
-        (user["id"], ", ".join(messages)), commit=True
-    )
-    
-    # Invalidate all existing sessions for this user
     execute_query("DELETE FROM sessions WHERE user_id=%s", (user["id"],), commit=True)
-    
-    return {
-        "message": "Credentials updated successfully. Please login again.",
-        "changes": messages
-    }
+    return {"message": f"Credentials updated. Please login again. Changes: {', '.join(changes)}"}

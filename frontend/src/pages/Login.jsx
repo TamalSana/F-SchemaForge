@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -13,6 +13,21 @@ export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
 
+  useEffect(() => {
+    const checkSetup = async () => {
+      try {
+        const res = await api.get('/setup/status');
+        if (!res.data.setup_completed) {
+          navigate('/setup');
+        }
+      } catch (err) {
+        // If backend not reachable, assume setup needed
+        navigate('/setup');
+      }
+    };
+    checkSetup();
+  }, [navigate]);
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setBlacklistMessage(null);
@@ -24,7 +39,6 @@ export default function Login() {
       }
     } catch (err) {
       const errorMsg = err.response?.data?.detail;
-      // Check if user is blacklisted
       if (errorMsg && errorMsg.toLowerCase().includes('blacklisted')) {
         setBlacklistMessage(errorMsg);
       } else {
@@ -34,82 +48,39 @@ export default function Login() {
   };
 
   const handleVerify = async (e) => {
-  e.preventDefault();
-  try {
-    const res = await api.post('/auth/verify-otp', { email, otp, purpose: 'login' });
-    
-    // Check what the backend returned
-    console.log('Login response:', res.data);
-    console.log('User object:', res.data.user);
-    console.log('User role:', res.data.user?.role);
-    
-    login(res.data.access_token, res.data.user);
-    toast.success('Login successful');
-    navigate('/dashboard');
-  } catch (err) {
-    toast.error(err.response?.data?.detail || 'Invalid OTP');
-  }
+    e.preventDefault();
+    try {
+      const res = await api.post('/auth/verify-otp', { email, otp, purpose: 'login' });
+      login(res.data.access_token, res.data.user);
+      toast.success('Login successful');
+      navigate('/dashboard');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Invalid OTP');
+    }
   };
 
   return (
     <div className="max-w-md mx-auto mt-20 p-6 bg-white shadow rounded">
       <h2 className="text-2xl font-bold mb-4">Login</h2>
-      
-      {/* Blacklist Message Display */}
       {blacklistMessage && (
         <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
           <div className="font-bold mb-1">⚠️ Account Blocked</div>
           <div className="text-sm whitespace-pre-line">{blacklistMessage}</div>
         </div>
       )}
-      
       {step === 'login' ? (
         <form onSubmit={handleLogin}>
-          <input 
-            type="email" 
-            placeholder="Email" 
-            className="w-full border p-2 mb-3 rounded" 
-            value={email} 
-            onChange={e => setEmail(e.target.value)} 
-            required 
-            disabled={blacklistMessage !== null}
-          />
-          <input 
-            type="password" 
-            placeholder="Password" 
-            className="w-full border p-2 mb-3 rounded" 
-            value={password} 
-            onChange={e => setPassword(e.target.value)} 
-            required 
-            disabled={blacklistMessage !== null}
-          />
-          <button 
-            type="submit" 
-            className="w-full bg-blue-600 text-white py-2 rounded disabled:opacity-50"
-            disabled={blacklistMessage !== null}
-          >
-            Login
-          </button>
+          <input type="email" placeholder="Email" className="w-full border p-2 mb-3 rounded" value={email} onChange={e => setEmail(e.target.value)} required />
+          <input type="password" placeholder="Password" className="w-full border p-2 mb-3 rounded" value={password} onChange={e => setPassword(e.target.value)} required />
+          <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded">Login</button>
         </form>
       ) : (
         <form onSubmit={handleVerify}>
-          <input 
-            type="text" 
-            placeholder="OTP" 
-            className="w-full border p-2 mb-3 rounded" 
-            value={otp} 
-            onChange={e => setOtp(e.target.value)} 
-            required 
-          />
-          <button type="submit" className="w-full bg-green-600 text-white py-2 rounded">
-            Verify OTP
-          </button>
+          <input type="text" placeholder="OTP" className="w-full border p-2 mb-3 rounded" value={otp} onChange={e => setOtp(e.target.value)} required />
+          <button type="submit" className="w-full bg-green-600 text-white py-2 rounded">Verify OTP</button>
         </form>
       )}
-      
-      <p className="mt-4 text-center">
-        Don't have an account? <Link to="/register" className="text-blue-600">Register</Link>
-      </p>
+      <p className="mt-4 text-center">Don't have an account? <Link to="/register" className="text-blue-600">Register</Link></p>
     </div>
   );
 }

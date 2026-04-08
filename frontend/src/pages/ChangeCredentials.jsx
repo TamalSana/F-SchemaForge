@@ -13,7 +13,6 @@ export default function ChangeCredentials() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  // If no user, redirect to login
   if (!user) {
     navigate('/login');
     return null;
@@ -24,6 +23,12 @@ export default function ChangeCredentials() {
     
     if (!currentPassword) {
       toast.error('Current password is required');
+      return;
+    }
+    
+    // Require at least one new field
+    if (!newEmail && !newPassword) {
+      toast.error('Please enter a new email or new password');
       return;
     }
     
@@ -40,26 +45,19 @@ export default function ChangeCredentials() {
     setLoading(true);
     
     try {
-      const payload = {};
-      payload.current_password = currentPassword;
+      const payload = { current_password: currentPassword };
       if (newEmail) payload.new_email = newEmail;
       if (newPassword) payload.new_password = newPassword;
       
       const response = await api.post('/admin/change-credentials', payload);
-      
       toast.success(response.data.message);
       
-      // Clear localStorage and logout
       setTimeout(() => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        delete api.defaults.headers.common['Authorization'];
+        localStorage.clear();
         window.location.href = '/login';
       }, 2000);
-      
     } catch (err) {
-      const errorMsg = err.response?.data?.detail || 'Failed to update credentials';
-      toast.error(errorMsg);
+      toast.error(err.response?.data?.detail || 'Update failed');
       setLoading(false);
     }
   };
@@ -70,16 +68,12 @@ export default function ChangeCredentials() {
         <div className="text-center mb-6">
           <div className="text-4xl mb-2">🔑</div>
           <h1 className="text-2xl font-bold">Change Credentials</h1>
-          <p className="text-gray-500 text-sm mt-1">
-            Update your email or password
-          </p>
+          <p className="text-gray-500 text-sm mt-1">Update your email or password</p>
         </div>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Current Password *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Current Password *</label>
             <input
               type="password"
               value={currentPassword}
@@ -91,9 +85,7 @@ export default function ChangeCredentials() {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              New Email (optional)
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">New Email (optional)</label>
             <input
               type="email"
               value={newEmail}
@@ -101,15 +93,11 @@ export default function ChangeCredentials() {
               className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder={user?.email || "New email address"}
             />
-            <p className="text-xs text-gray-500 mt-1">
-              Leave blank to keep current email
-            </p>
+            <p className="text-xs text-gray-500 mt-1">Leave blank to keep current email</p>
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              New Password (optional)
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">New Password *</label>
             <input
               type="password"
               value={newPassword}
@@ -121,9 +109,7 @@ export default function ChangeCredentials() {
           
           {newPassword && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Confirm New Password
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
               <input
                 type="password"
                 value={confirmPassword}

@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from database.connection import get_db_connection, execute_query
 from utils.middleware import get_current_user
-from services.permission_service import is_project_admin
+from services.permission_service import is_project_admin, can_create_project
 import secrets
 
 router = APIRouter(prefix="/projects", tags=["projects"])
@@ -22,8 +22,7 @@ class ApproveUserRequest(BaseModel):
 async def create_project(req: CreateProjectRequest, request: Request):
     user = get_current_user(request)
     secret_key = secrets.token_hex(16)
-    perm = execute_query("SELECT can_create_project FROM user_permissions WHERE user_id=%s", (user["id"],), fetch_one=True)
-    if not perm or not perm["can_create_project"]:
+    if not can_create_project(user["id"]):
         raise HTTPException(status_code=403, detail="You do not have permission to create projects")
     
     conn = get_db_connection()

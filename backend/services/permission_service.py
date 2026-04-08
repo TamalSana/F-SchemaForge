@@ -1,7 +1,13 @@
 from database.connection import execute_query
 from typing import List, Dict, Any
 
+def is_super_admin(user_id):
+    user = execute_query("SELECT role FROM users WHERE id=%s", (user_id,), fetch_one=True)
+    return user and user["role"] == "super_admin"
+
 def is_project_admin(project_id, user_id):
+    if is_super_admin(user_id):
+        return True
     row = execute_query(
         "SELECT id FROM project_members WHERE project_id=%s AND user_id=%s AND role='admin' AND status='approved'",
         (project_id, user_id), fetch_one=True
@@ -9,6 +15,8 @@ def is_project_admin(project_id, user_id):
     return row is not None
 
 def is_project_member(project_id, user_id):
+    if is_super_admin(user_id):
+        return True
     row = execute_query(
         "SELECT id FROM project_members WHERE project_id=%s AND user_id=%s AND status='approved'",
         (project_id, user_id), fetch_one=True
@@ -16,13 +24,22 @@ def is_project_member(project_id, user_id):
     return row is not None
 
 def can_execute_sql(project_id, user_id):
-    return is_project_admin(project_id, user_id)
+    return is_super_admin(user_id) or is_project_admin(project_id, user_id)
 
 def can_manage_schema(project_id, user_id):
-    return is_project_admin(project_id, user_id)
+    return is_super_admin(user_id) or is_project_admin(project_id, user_id)
 
 def can_view_schema(project_id, user_id):
-    return is_project_member(project_id, user_id) or is_project_admin(project_id, user_id)
+    return is_super_admin(user_id) or is_project_member(project_id, user_id)
+
+def can_create_project(user_id):
+    if is_super_admin(user_id):
+        return True
+    perm = execute_query(
+        "SELECT can_create_project FROM user_permissions WHERE user_id=%s",
+        (user_id,), fetch_one=True
+    )
+    return perm and perm["can_create_project"]
 
 # New granular permission functions
 def can_access_database(project_id, user_id, required_level='read'):

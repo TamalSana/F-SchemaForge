@@ -16,7 +16,7 @@ import AdminUserManagement from './pages/AdminUserManagement';
 import SQLHistory from './pages/SQLHistory';
 import ProjectPermissions from './pages/ProjectPermissions';
 import ChangeCredentials from './pages/ChangeCredentials';
-
+import FirstTimeSetup from './pages/FirstTimeSetup';
 
 function App() {
   return (
@@ -24,20 +24,21 @@ function App() {
       <BrowserRouter>
         <Toaster position="top-right" />
         <Routes>
+          <Route path="/setup" element={<FirstTimeSetup />} />
           <Route element={<Layout />}>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/project/:id/history" element={<ProtectedRoute><SQLHistory /></ProtectedRoute>} />
-            <Route path="/admin/users" element={<ProtectedRoute requireAdmin><AdminUserManagement /></ProtectedRoute>} />
             <Route path="/projects" element={<ProtectedRoute><ProjectList /></ProtectedRoute>} />
             <Route path="/project/:id" element={<ProtectedRoute><ProjectView /></ProtectedRoute>} />
             <Route path="/project/:id/schema" element={<ProtectedRoute><SchemaDesigner /></ProtectedRoute>} />
             <Route path="/project/:id/sql-preview" element={<ProtectedRoute><SQLPreview /></ProtectedRoute>} />
             <Route path="/project/:id/data" element={<ProtectedRoute><DataManagement /></ProtectedRoute>} />
-            <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminPanel /></ProtectedRoute>} />
+            <Route path="/project/:id/history" element={<ProtectedRoute><SQLHistory /></ProtectedRoute>} />
             <Route path="/project/:id/permissions" element={<ProtectedRoute><ProjectPermissions /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminPanel /></ProtectedRoute>} />
+            <Route path="/admin/users" element={<ProtectedRoute requireAdmin><AdminUserManagement /></ProtectedRoute>} />
             <Route path="/change-credentials" element={<ProtectedRoute><ChangeCredentials /></ProtectedRoute>} />
           </Route>
         </Routes>

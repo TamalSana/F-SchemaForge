@@ -7,6 +7,17 @@
 CREATE DATABASE IF NOT EXISTS schemaforge_metadata;
 USE schemaforge_metadata;
 
+CREATE TABLE IF NOT EXISTS setup_status (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    setup_completed BOOLEAN DEFAULT FALSE,
+    completed_at TIMESTAMP NULL,
+    version VARCHAR(50) DEFAULT '1.0'
+);
+
+INSERT INTO setup_status (id, setup_completed) VALUES (1, FALSE) 
+ON DUPLICATE KEY UPDATE setup_completed = setup_completed;
+
+
 -- =====================================================
 -- 1. USERS TABLE
 -- =====================================================

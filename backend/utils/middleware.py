@@ -4,10 +4,22 @@ from config import Config
 from database.connection import execute_query
 
 async def auth_middleware(request: Request, call_next):
+    # Allow OPTIONS preflight requests
     if request.method == "OPTIONS":
         return await call_next(request)
     
-    public_paths = ["/auth/register", "/auth/login", "/auth/verify-otp", "/docs", "/openapi.json", "/health"]
+    # Public endpoints (no token required)
+    public_paths = [
+        "/auth/register",
+        "/auth/login",
+        "/auth/verify-otp",
+        "/docs",
+        "/openapi.json",
+        "/health",
+        "/setup/status",
+        "/setup/configure-database"
+    ]
+    
     if request.url.path in public_paths:
         return await call_next(request)
     
@@ -23,13 +35,14 @@ async def auth_middleware(request: Request, call_next):
         user_id = payload.get("user_id")
         user_role = payload.get("role", "user")
         
+        # Check blacklist
         blacklisted = execute_query("SELECT id FROM blacklist WHERE user_id=%s", (user_id,), fetch_one=True)
         if blacklisted:
             raise HTTPException(status_code=403, detail="Your account has been blacklisted")
         
         request.state.user = {
-            "id": user_id, 
-            "email": user_email, 
+            "id": user_id,
+            "email": user_email,
             "role": user_role
         }
         
