@@ -108,6 +108,13 @@ export default function AdminUserManagement() {
       toast.error('Select both a user and a project');
       return;
     }
+
+    // Prevent non‑super‑admin from granting/revoking permissions to themselves
+    if (currentUser?.role !== 'super_admin' && parseInt(selectedUserId) === currentUser?.id) {
+      toast.error('You cannot grant or revoke access to yourself');
+      return;
+    }
+
     setLoading(true);
     try {
       await api.post('/admin/project-access', {
@@ -150,7 +157,7 @@ export default function AdminUserManagement() {
     <div className="space-y-6">
       <div className="bg-gray-50 border border-gray-200 p-3 rounded text-sm text-gray-600 mb-4">
         Manage users, roles, and permissions.
-        </div>
+      </div>
 
       {/* Users Table */}
       <div className="bg-white p-4 rounded shadow overflow-x-auto">
@@ -260,7 +267,7 @@ export default function AdminUserManagement() {
             <option value="">Select User</option>
             {users.map(u => (
               <option key={u.id} value={u.id}>
-                {u.email} ({u.role})
+                {u.email} ({u.role}) {u.id === currentUser?.id ? '(you)' : ''}
               </option>
             ))}
           </select>

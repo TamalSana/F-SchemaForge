@@ -130,10 +130,9 @@ def revoke_table_access(project_id, table_name, user_id):
     return True
 
 def get_project_users_with_permissions(project_id):
-    """Get all users with their permissions for a project"""
     users = execute_query("""
         SELECT 
-            u.id, u.email, u.is_super_admin, u.is_admin,
+            u.id, u.email, u.role,
             pm.role as project_role,
             dp.permission_type as database_permission,
             GROUP_CONCAT(CONCAT(tp.table_name, ':', tp.permission_type)) as table_permissions

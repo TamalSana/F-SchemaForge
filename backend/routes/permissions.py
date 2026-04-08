@@ -38,7 +38,8 @@ async def grant_db_access(req: GrantDatabaseAccessRequest, request: Request):
     admin_user = get_current_user(request)
     if not (is_project_admin(req.project_id, admin_user["id"]) or admin_user.get("is_super_admin")):
         raise HTTPException(status_code=403, detail="Admin access required")
-    
+    if req.user_id == admin_user["id"]:
+        raise HTTPException(status_code=403, detail="You cannot grant permissions to yourself")
     grant_database_access(req.project_id, req.user_id, req.permission_type, admin_user["id"])
     return {"message": f"Database access granted with {req.permission_type} permission"}
 
@@ -47,6 +48,8 @@ async def revoke_db_access(project_id: int, user_id: int, request: Request):
     admin_user = get_current_user(request)
     if not (is_project_admin(project_id, admin_user["id"]) or admin_user.get("is_super_admin")):
         raise HTTPException(status_code=403, detail="Admin access required")
+    if user_id == admin_user["id"]:
+        raise HTTPException(status_code=403, detail="You cannot revoke your own permissions")
     
     revoke_database_access(project_id, user_id)
     return {"message": "Database access revoked"}

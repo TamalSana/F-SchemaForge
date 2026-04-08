@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database.connection import init_db_pool
-from routes import auth, projects, schema_designer, data, admin, permissions, setup
+from routes import auth, projects, schema_designer, data, admin, permissions, setup, sql_history
 from utils.middleware import auth_middleware
 
 @asynccontextmanager
@@ -36,6 +36,7 @@ app.include_router(data.router)
 app.include_router(admin.router)
 app.include_router(permissions.router)
 app.include_router(setup.router)
+app.include_router(sql_history.router)
 
 @app.get("/health")
 async def health():

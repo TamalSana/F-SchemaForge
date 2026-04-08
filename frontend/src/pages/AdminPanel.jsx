@@ -53,10 +53,10 @@ export default function AdminPanel() {
   }, [activeTab]);
 
   const tabs = [
-    { id: 'users', label: '👥 Users', icon: '👥' },
-    { id: 'config', label: '⚙️ Config', icon: '⚙️' },
-    { id: 'logs', label: '📋 Logs', icon: '📋' },
-    { id: 'sessions', label: '🔌 Sessions', icon: '🔌' }
+    { id: 'users', label: 'Users', icon: '👥' },
+    { id: 'config', label: 'Config', icon: '⚙️' },
+    { id: 'logs', label: 'Logs', icon: '📋' },
+    { id: 'sessions', label: 'Sessions', icon: '🔌' }
   ];
 
   return (

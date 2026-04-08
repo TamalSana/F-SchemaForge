@@ -65,3 +65,15 @@ async def get_data(project_id: int, table_name: str, request: Request):
         if "doesn't exist" in str(e).lower():
             return {"data": [], "message": f"Table '{table_name}' not found"}
         raise HTTPException(status_code=500, detail=str(e))
+    
+@router.delete("/row/{project_id}/{table_name}/{row_id}")
+async def delete_row(project_id: int, table_name: str, row_id: int, request: Request):
+    user = get_current_user(request)
+    if not is_project_member(project_id, user["id"]):
+        raise HTTPException(status_code=403, detail="Access denied")
+    full_table = f"project_{project_id}_{table_name.lower()}"
+    try:
+        execute_query(f"DELETE FROM {full_table} WHERE id = %s", (row_id,), commit=True)
+        return {"message": "Row deleted"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
