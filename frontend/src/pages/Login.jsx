@@ -73,6 +73,9 @@ export default function Login() {
           <input type="email" placeholder="Email" className="w-full border p-2 mb-3 rounded" value={email} onChange={e => setEmail(e.target.value)} required />
           <input type="password" placeholder="Password" className="w-full border p-2 mb-3 rounded" value={password} onChange={e => setPassword(e.target.value)} required />
           <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded">Login</button>
+          <p className="text-center mt-4">
+          <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline">Forgot password?</Link>
+          </p>
         </form>
       ) : (
         <form onSubmit={handleVerify}>

@@ -4,8 +4,17 @@ from utils.security import hash_password, verify_password, create_access_token
 from utils.otp import generate_otp, store_otp, verify_otp
 from database.connection import execute_query
 import logging
+import secrets
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+class ResetPasswordRequest(BaseModel):
+    email: str
+    otp: str
+    new_password: str
 
 class RegisterRequest(BaseModel):
     email: str
@@ -110,3 +119,34 @@ async def login(req: LoginRequest):
     logging.info(f"Login OTP for {req.email}: {otp}")
     
     return {"message": "OTP sent. Please verify.", "email": req.email}
+
+@router.post("/forgot-password")
+async def forgot_password(req: ForgotPasswordRequest):
+    # Check if user exists
+    user = execute_query("SELECT id FROM users WHERE email=%s", (req.email,), fetch_one=True)
+    if not user:
+        # For security, don't reveal if email exists
+        return {"message": "If an account with that email exists, an OTP has been sent."}
+    
+    # Generate OTP and store with purpose 'reset'
+    otp = generate_otp()
+    store_otp(req.email, otp, "reset")
+    logging.info(f"Password reset OTP for {req.email}: {otp}")
+    return {"message": "OTP sent to your email."}
+
+@router.post("/reset-password")
+async def reset_password(req: ResetPasswordRequest):
+    # Verify OTP
+    if not verify_otp(req.email, req.otp, "reset"):
+        raise HTTPException(status_code=400, detail="Invalid or expired OTP")
+    
+    # Update password
+    hashed = hash_password(req.new_password)
+    execute_query("UPDATE users SET password_hash=%s WHERE email=%s", (hashed, req.email), commit=True)
+    
+    # Invalidate all sessions for this user
+    user = execute_query("SELECT id FROM users WHERE email=%s", (req.email,), fetch_one=True)
+    if user:
+        execute_query("DELETE FROM sessions WHERE user_id=%s", (user["id"],), commit=True)
+    
+    return {"message": "Password reset successful. Please login with your new password."}

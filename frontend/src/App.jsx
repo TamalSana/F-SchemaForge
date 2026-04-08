@@ -17,6 +17,7 @@ import SQLHistory from './pages/SQLHistory';
 import ProjectPermissions from './pages/ProjectPermissions';
 import ChangeCredentials from './pages/ChangeCredentials';
 import FirstTimeSetup from './pages/FirstTimeSetup';
+import ForgotPassword from './pages/ForgotPassword';
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
             <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminPanel /></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute requireAdmin><AdminUserManagement /></ProtectedRoute>} />
             <Route path="/change-credentials" element={<ProtectedRoute><ChangeCredentials /></ProtectedRoute>} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
           </Route>
         </Routes>
       </BrowserRouter>

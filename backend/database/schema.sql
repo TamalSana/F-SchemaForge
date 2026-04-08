@@ -287,6 +287,16 @@ CREATE TABLE password_resets (
 CREATE INDEX idx_reset_token ON password_resets(reset_token);
 CREATE INDEX idx_reset_expires ON password_resets(expires_at);
 
+CREATE TABLE IF NOT EXISTS password_resets (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    reset_token VARCHAR(255) NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    used BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_reset_token (reset_token)
+);
 -- =====================================================
 -- INITIAL DATA: Create Super Admin
 -- Note: Password is 'Admin@123' hashed with pbkdf2_sha256

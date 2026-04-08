@@ -10,11 +10,13 @@ async def auth_middleware(request: Request, call_next):
     
     # Public endpoints (no token required)
     public_paths = [
-        "/auth/register",
-        "/auth/login",
+        "/auth/register", 
+        "/auth/login", 
         "/auth/verify-otp",
-        "/docs",
-        "/openapi.json",
+        "/auth/forgot-password",
+        "/auth/reset-password",
+        "/docs", 
+        "/openapi.json", 
         "/health",
         "/setup/status",
         "/setup/configure-database"
